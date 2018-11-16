@@ -1,4 +1,8 @@
-// import db from './app';
+/*
+* Autor : Ing.Omar Xavier Romero Lopez
+* Version : CRUDv3
+* Descripción : CRUD elaborado integrado con FireStore
+* */
 firebase.initializeApp({
     apiKey: "AIzaSyBAySAEiHNMFgxTejOrRpRg483ri_qnOok",
     authDomain: "crudv3.firebaseapp.com",
@@ -23,15 +27,9 @@ window.addEventListener('DOMContentLoaded',function(){
     var inputApellidos = document.getElementById('apellidos');
     var inputEdad = document.getElementById('edad');
     var list = document.getElementById('tbListPers');
-    var btnAdd  = document.getElementById('btnAdd');
-    var TituloEditar = document.getElementById('TituloEditar');
 
-    var todoList = [];
-    var ListItem = "";
-    var i=0;
     eventos();
 
-    //btnRemove.addEventListener("click", removeItem);
     if (localStorage.length > 0) {
         displayList();
     }
@@ -59,27 +57,32 @@ window.addEventListener('DOMContentLoaded',function(){
         })
     }
     function addItem(){
-        todoList.push({ nombres: inputNombre.value,apellidos: inputApellidos.value,edad: inputEdad.value });
-        addToLocalStorage({ nombres: inputNombre.value,apellidos: inputApellidos.value,edad: inputEdad.value });
+        addToFireStore({ nombres: inputNombre.value,apellidos: inputApellidos.value,edad: inputEdad.value });
         limpiarTabla();
         displayList();
         form.reset();
     }
 
     function removeItem(id){
-        removeToLocalStorage(id);
+        removeToFireStore(id);
         limpiarTabla();
         displayList();
     }
     function editItem(dataId){
+        var dataRef = db.collection('data').doc(dataId);
+        dataRef.get().then(doc => {
+            if (!doc.exists) {
+                console.log('No such document!');
+            } else {
+                console.log('Document data:', doc.data());
+                inputNombre.value =    doc.data().nombres;
+                inputApellidos.value = doc.data().apellidos;
+                inputEdad.value = doc.data().edad;
+            }
+        }).catch(err => {
+            console.log('Error getting document', err);
+        });
 
-        var batch = db.batch();
-        var sfRef = db.collection("data").doc(dataId);
-
-        console.log(sfRef);
-        inputNombre.value =    todoList[dataId].nombres;
-        inputApellidos.value = todoList[dataId].apellidos;
-        inputEdad.value = todoList[dataId].edad;
         document.getElementById("btnAdd").setAttribute("id",dataId);
         document.getElementById(dataId).setAttribute("name","update");
         document.getElementById(dataId).innerText = "Guardar";
@@ -87,7 +90,7 @@ window.addEventListener('DOMContentLoaded',function(){
     }
 
 
-    function addToLocalStorage(data) {
+    function addToFireStore(data) {
         if (typeof(Storage) !== "undefined") {
             guardarFireStore(data);
         }
@@ -95,32 +98,32 @@ window.addEventListener('DOMContentLoaded',function(){
             alert("browser doesn't support local storage!");
         }
     }
-    function editToLocalStorage(dataId){
 
-        var todoListCopia = todoList.slice();
-        if (typeof(Storage) !== "undefined") {
-            todoList = [];
-            todoList = JSON.parse(localStorage.getItem("todoList"));
-            todoList.splice(dataId, 1,todoListCopia[0]);
-            localStorage.setItem("todoList", JSON.stringify(todoList));
-        }
-        else {
-            alert("browser doesn't support local storage!");
-        }
-    }
-    function removeToLocalStorage(dataId)
+    function removeToFireStore(dataId)
     {
-        var batch = db.batch();
-        var laRef = db.collection("data").doc(dataId);
-        batch.delete(laRef);
-
+        db.collection("data").doc(dataId).delete().then(function() {
+            console.log("Document successfully deleted!");
+        }).catch(function(error) {
+            console.error("Error removing document: ", error);
+        });
     }
 
     function guardarItem(dataId)
     {
-        todoList = [];
-        todoList.push({ nombres: inputNombre.value,apellidos: inputApellidos.value,edad: inputEdad.value });
-        editToLocalStorage(dataId);
+
+        var dataRef = db.collection("data").doc(dataId);
+
+        dataRef.update({
+            nombres:  inputNombre.value , apellidos: inputApellidos.value , edad: inputEdad.value
+        })
+            .then(function() {
+                console.log("Document successfully updated!");
+            })
+            .catch(function(error) {
+
+                console.error("Error updating document: ", error);
+            });
+
         document.getElementsByName("update")[0].id = "btnAdd";
         document.getElementById("btnAdd").innerText = "Agregar";
         document.getElementById("btnAdd").setAttribute("name","");
@@ -132,7 +135,7 @@ window.addEventListener('DOMContentLoaded',function(){
     }
     function displayList(){
 
-       db.collection("data").get().then((querySnapshot) => {
+       db.collection("data").orderBy("nombres", "asc").get().then((querySnapshot) => {
             querySnapshot.forEach((doc) => {
                 //todoList[doc.id] = { 'nombres' : doc.data().nombres , 'apellidos' : doc.data().apellidos, 'edad' : doc.data().edad  }
                 var item = "<tr id='li-"+doc.id+"'><td>" + doc.data().nombres + "</td>" +
@@ -154,13 +157,11 @@ window.addEventListener('DOMContentLoaded',function(){
         var tbListPers = document.getElementById("tbListPers");
 
         while (tbListPers.firstChild) {
-
             tbListPers.removeChild(tbListPers.firstChild);
         }
     }
 
     function guardarFireStore(data) {
-
         db.collection("data").add(data)
             .then(function (docRef) {
                 console.log("Document written with ID: ", docRef.id);
