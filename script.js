@@ -72,8 +72,11 @@ window.addEventListener('DOMContentLoaded',function(){
         displayList();
     }
     function editItem(dataId){
-        console.log(dataId);
-        getToLocalStorage();
+
+        var batch = db.batch();
+        var sfRef = db.collection("data").doc(dataId);
+
+        console.log(sfRef);
         inputNombre.value =    todoList[dataId].nombres;
         inputApellidos.value = todoList[dataId].apellidos;
         inputEdad.value = todoList[dataId].edad;
@@ -82,15 +85,7 @@ window.addEventListener('DOMContentLoaded',function(){
         document.getElementById(dataId).innerText = "Guardar";
         document.getElementById("TituloEditar").innerText = "Editar Persona";
     }
-    function getToLocalStorage() {
 
-        if (typeof(Storage) !== "undefined") {
-            todoList = JSON.parse(localStorage.getItem("todoList"));
-        }
-        else {
-            alert("browser doesn't support local storage!");
-        }
-    }
 
     function addToLocalStorage(data) {
         if (typeof(Storage) !== "undefined") {
@@ -115,15 +110,9 @@ window.addEventListener('DOMContentLoaded',function(){
     }
     function removeToLocalStorage(dataId)
     {
-        if (typeof(Storage) !== "undefined") {
-            todoList = [];
-            todoList = JSON.parse(localStorage.getItem("todoList"));
-            todoList.splice(dataId, 1);
-            localStorage.setItem("todoList", JSON.stringify(todoList));
-        }
-        else {
-            alert("browser doesn't support local storage!");
-        }
+        var batch = db.batch();
+        var laRef = db.collection("data").doc(dataId);
+        batch.delete(laRef);
 
     }
 
