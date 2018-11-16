@@ -142,19 +142,22 @@ window.addEventListener('DOMContentLoaded',function(){
 
     }
     function displayList(){
-        todoList = JSON.parse(localStorage.getItem("todoList"));
-        todoList.innerHTML="";
-        for (var i = 0; i < todoList.length; i++) {
 
-            var item = "<tr id='li-"+i+"'><td>" + todoList[i].nombres + "</td>" +
-                "<td>" + todoList[i].apellidos +  "</td>" +
-                "<td>" + todoList[i].edad +  "</td>" +
-                "<td> <button type='button'  id="+i+" name='btnRemove' class='btn btn-danger glyphicon glyphicon-trash btnRemove'>" +
-                "</button> <button type='button' data-id="+i+ " id="+i+" name='btnEdit' class='btn btn-primary glyphicon glyphicon-edit btnEdit'>" +
-                "</button></td></tr>";
-            list.insertAdjacentHTML('beforeend',item);
+       db.collection("data").get().then((querySnapshot) => {
+            querySnapshot.forEach((doc) => {
+                //todoList[doc.id] = { 'nombres' : doc.data().nombres , 'apellidos' : doc.data().apellidos, 'edad' : doc.data().edad  }
+                var item = "<tr id='li-"+doc.id+"'><td>" + doc.data().nombres + "</td>" +
+                    "<td>" + doc.data().apellidos +  "</td>" +
+                    "<td>" + doc.data().edad +  "</td>" +
+                    "<td> <button type='button'  id="+doc.id+" name='btnRemove' class='btn btn-danger glyphicon glyphicon-trash btnRemove'>" +
+                    "</button> <button type='button' id="+doc.id+" name='btnEdit' class='btn btn-primary glyphicon glyphicon-edit btnEdit'>" +
+                    "</button></td></tr>";
+                list.insertAdjacentHTML('beforeend',item);
 
-        }
+            });
+
+        });
+
 
     }
 
